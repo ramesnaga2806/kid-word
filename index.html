@@ -1,181 +1,327 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Kids Spelling with Repeat</title>
-<style>
-body { font-family: Comic Sans MS, Arial; background: linear-gradient(135deg,#fbc2eb,#a6c1ee); text-align:center; }
-h1 { margin-top:20px; }
-#parent{background:white;margin:20px;padding:20px;border-radius:20px;}
-input[type=text],input[type=file]{font-size:20px;padding:10px;width:220px;margin:5px;}
-button{font-size:18px;padding:10px 20px;border-radius:15px;border:none;background:#ff9a9e;margin:8px;}
-#img{width:220px;height:220px;background:white;border-radius:20px;object-fit:cover;margin-top:20px;}
-.word{font-size:70px;letter-spacing:15px;background:white;padding:20px;border-radius:25px;display:inline-block;margin:20px;}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magic Speller 🌈</title>
+    <style>
+        :root {
+            --primary: #ff6f91;
+            --secondary: #ff9a9e;
+            --bg: #f0f4f8;
+            --text: #2d3436;
+        }
+
+        body { 
+            font-family: 'Comic Sans MS', 'Chalkboard SE', cursive; 
+            background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);
+            color: var(--text);
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Parent Area - Hidden by default or collapsible */
+        #parentArea {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 0 0 20px 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            width: 90%;
+            max-width: 500px;
+            display: none; /* Toggle this */
+        }
+
+        .toggle-parent {
+            background: #6c5ce7;
+            color: white;
+            border: none;
+            padding: 5px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        /* Kid Zone */
+        #kidZone {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+        }
+
+        #imgContainer {
+            width: 280px;
+            height: 280px;
+            background: white;
+            border: 8px solid white;
+            border-radius: 30px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+
+        #imgContainer:hover { transform: scale(1.02); }
+
+        #img { width: 100%; height: 100%; object-fit: cover; }
+
+        .word-display {
+            font-size: 80px;
+            min-height: 120px;
+            margin: 20px;
+            color: #2d3436;
+            text-shadow: 2px 2px 0px #fff;
+            display: flex;
+            gap: 10px;
+        }
+
+        .letter {
+            display: inline-block;
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        button {
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .btn-main {
+            font-size: 40px;
+            padding: 15px 30px;
+            border-radius: 50px;
+            border: none;
+            background: white;
+            box-shadow: 0 6px 0 #ddd;
+        }
+
+        .btn-main:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #ddd;
+        }
+
+        .btn-nav { background: #ff7675; color: white; }
+        .btn-repeat { background: #55efc4; color: white; }
+
+        .progress-bar {
+            width: 80%;
+            height: 10px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 10px;
+            margin-top: 20px;
+            overflow: hidden;
+        }
+
+        #progressFill {
+            height: 100%;
+            background: #6c5ce7;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        input {
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            padding: 10px;
+            margin: 5px;
+            width: 80%;
+        }
+    </style>
 </head>
 <body>
 
-<h1>🌈 Kids Spelling Full 🌈</h1>
+    <button class="toggle-parent" onclick="toggleParent()">⚙️ Parent Settings</button>
 
-<div id="parent">
-<h2>Parent Area</h2>
-<!-- Manual entry -->
-<input type="text" id="wordInput" placeholder="APPLE"><br>
-<input type="file" id="imgUpload" accept="image/*"><br>
-<button onclick="addWord()">Add Word</button><br>
+    <div id="parentArea">
+        <h3>Add New Words</h3>
+        <input type="text" id="wordInput" placeholder="Enter word (e.g. TIGER)">
+        <input type="file" id="imgUpload" accept="image/*">
+        <button onclick="addWord()" style="background:#55efc4">Add Word</button>
+        <hr>
+        <input type="file" id="fileUpload" accept=".txt,.csv">
+        <button onclick="uploadFile()" style="background:#81ecec">Bulk Upload</button>
+        <button onclick="clearAll()" style="background:#ff7675; color:white">Clear All</button>
+    </div>
 
-<!-- Upload file -->
-<input type="file" id="fileUpload" accept=".txt,.csv"><br>
-<button onclick="uploadFile()">Upload Words</button><br>
+    <div id="kidZone">
+        <div id="imgContainer">
+            <img id="img" src="" alt="Ready?">
+        </div>
 
-<button onclick="clearAll()">Clear All</button>
-</div>
+        <div class="word-display" id="wordBox"></div>
 
-<img id="img" alt="Image will appear here">
-<div class="word" id="wordBox"></div>
-<br>
-<button onclick="prevWord()">⬅️ Back</button>
-<button onclick="nextWord()">Next ➡️</button>
-<button onclick="repeatWord()">🔁 Repeat</button>
+        <div class="controls">
+            <button class="btn-main btn-nav" onclick="prevWord()">⬅️</button>
+            <button class="btn-main btn-repeat" onclick="repeatWord()">🔁</button>
+            <button class="btn-main btn-nav" onclick="nextWord()">➡️</button>
+        </div>
+
+        <div class="progress-bar">
+            <div id="progressFill"></div>
+        </div>
+        <p id="counter" style="color:white; font-weight:bold;"></p>
+    </div>
 
 <script>
-let words = JSON.parse(localStorage.getItem("kidsWords")) || [];
-let index = 0;
-let letterTimer;
+    let words = JSON.parse(localStorage.getItem("kidsWords")) || [
+        {word: "APPLE", img: null},
+        {word: "CAT", img: null},
+        {word: "SUN", img: null}
+    ];
+    let index = 0;
+    let letterTimer;
 
-// ADD single word manually
-function addWord(){
-    let w = document.getElementById("wordInput").value.trim().toUpperCase();
-    if(!w) return alert("Enter a word");
-    let imgFile = document.getElementById("imgUpload").files[0];
+    function toggleParent() {
+        const p = document.getElementById("parentArea");
+        p.style.display = p.style.display === "block" ? "none" : "block";
+    }
 
-    if(imgFile){
-        let reader = new FileReader();
-        reader.onload = function(e){
-            words.push({word:w,img:e.target.result});
+    function addWord() {
+        let w = document.getElementById("wordInput").value.trim().toUpperCase();
+        if(!w) return alert("Please type a word!");
+        
+        let imgFile = document.getElementById("imgUpload").files[0];
+        if(imgFile){
+            let reader = new FileReader();
+            reader.onload = (e) => {
+                words.push({word:w, img:e.target.result});
+                saveAndReset();
+            };
+            reader.readAsDataURL(imgFile);
+        } else {
+            words.push({word:w, img:null});
             saveAndReset();
         }
-        reader.readAsDataURL(imgFile);
-    } else {
-        words.push({word:w,img:null}); // null = auto-fetch image
-        saveAndReset();
     }
-}
 
-// UPLOAD file (txt/csv)
-function uploadFile(){
-    let file = document.getElementById("fileUpload").files[0];
-    if(!file) return alert("Select a file");
-    let reader = new FileReader();
-    reader.onload = function(e){
-        let content = e.target.result;
-        let lines = content.split(/\r?\n/);
-        lines.forEach(line=>{
-            let w = line.trim().toUpperCase();
-            if(w) words.push({word:w,img:null});
-        });
-        saveAndReset();
-        alert("Words uploaded!");
+    function uploadFile(){
+        let file = document.getElementById("fileUpload").files[0];
+        if(!file) return;
+        let reader = new FileReader();
+        reader.onload = (e) => {
+            e.target.result.split(/\r?\n/).forEach(line => {
+                let w = line.trim().toUpperCase();
+                if(w) words.push({word:w, img:null});
+            });
+            saveAndReset();
+        };
+        reader.readAsText(file);
     }
-    reader.readAsText(file);
-}
 
-// SAVE & RESET INPUTS
-function saveAndReset(){
-    localStorage.setItem("kidsWords", JSON.stringify(words));
-    document.getElementById("wordInput").value="";
-    document.getElementById("imgUpload").value="";
-    document.getElementById("fileUpload").value="";
-    showWord();
-}
-
-// CLEAR
-function clearAll(){
-    if(confirm("Clear all words?")){
-        words=[];
-        localStorage.removeItem("kidsWords");
-        index=0;
+    function saveAndReset() {
+        localStorage.setItem("kidsWords", JSON.stringify(words));
+        document.getElementById("wordInput").value = "";
         showWord();
     }
-}
 
-// LOAD AUTO IMAGE FROM INTERNET
-function loadAutoImage(word){
-    let img = document.getElementById("img");
-    img.alt = "Loading image for " + word + "...";
-    img.src = "https://source.unsplash.com/400x400/?" + encodeURIComponent(word) + "&sig=" + Date.now();
-    img.onload = function(){ img.alt = word; }
-}
-
-// STOP CURRENT VOICE & TIMERS
-function stopSpeech(){
-    clearTimeout(letterTimer);
-    speechSynthesis.cancel();
-}
-
-// SHOW WORD + IMAGE
-function showWord(){
-    if(words.length===0){
-        document.getElementById("wordBox").innerHTML="No Words";
-        document.getElementById("img").src="";
-        return;
-    }
-    stopSpeech();
-    if(index<0) index = words.length-1;
-    if(index>=words.length) index = 0;
-
-    let w = words[index];
-
-    if(w.img && w.img.startsWith("data:")){ 
-        document.getElementById("img").src = w.img;
-    } else {
-        loadAutoImage(w.word);
-    }
-
-    document.getElementById("wordBox").innerHTML="";
-    speakLetters(w.word);
-}
-
-// SPEAK LETTERS + FULL WORD
-function speakLetters(word){
-    let letters = word.split("");
-    let i = 0;
-
-    function speakNext(){
-        if(i < letters.length){
-            document.getElementById("wordBox").innerHTML += letters[i]+" ";
-            speak(letters[i],0.6);
-            i++;
-            letterTimer = setTimeout(speakNext, 900);
-        } else {
-            letterTimer = setTimeout(()=>speak(word,0.7), 800);
+    function clearAll() {
+        if(confirm("Delete all words?")) {
+            words = [];
+            localStorage.removeItem("kidsWords");
+            showWord();
         }
     }
-    speakNext();
-}
 
-// SPEAK FUNCTION
-function speak(text, rate){
-    let msg = new SpeechSynthesisUtterance(text);
-    msg.rate = rate;
-    msg.pitch = 1.3;
-    speechSynthesis.speak(msg);
-}
+    function showWord() {
+        stopSpeech();
+        const wordBox = document.getElementById("wordBox");
+        const img = document.getElementById("img");
+        
+        if(words.length === 0) {
+            wordBox.innerHTML = "ADD WORDS";
+            img.src = "https://placehold.co/400x400?text=Add+Words";
+            return;
+        }
 
-// NEXT WORD
-function nextWord(){ stopSpeech(); index=(index+1)%words.length; showWord(); }
+        if(index < 0) index = words.length - 1;
+        if(index >= words.length) index = 0;
 
-// PREVIOUS WORD
-function prevWord(){ stopSpeech(); index=(index-1+words.length)%words.length; showWord(); }
+        let current = words[index];
+        
+        // Update Progress
+        document.getElementById("progressFill").style.width = ((index + 1) / words.length * 100) + "%";
+        document.getElementById("counter").innerText = `${index + 1} / ${words.length}`;
 
-// REPEAT CURRENT WORD
-function repeatWord(){ stopSpeech(); 
-    if(words.length>0) speakLetters(words[index].word); 
-}
+        // Image Logic
+        if(current.img) {
+            img.src = current.img;
+        } else {
+            // Using Pollinations AI for nice high-quality kid-friendly images
+            img.src = `https://image.pollinations.ai/prompt/cute%20cartoon%20${current.word}%20for%20kids%20isolated%20white%20background?width=400&height=400&seed=${index}&nologo=true`;
+        }
 
-// START
-showWord();
+        wordBox.innerHTML = "";
+        speakLetters(current.word);
+    }
+
+    function speakLetters(word) {
+        let chars = word.split("");
+        let i = 0;
+
+        function step() {
+            if(i < chars.length) {
+                const span = document.createElement("span");
+                span.className = "letter";
+                span.innerText = chars[i];
+                document.getElementById("wordBox").appendChild(span);
+                
+                speak(chars[i], 0.8);
+                i++;
+                letterTimer = setTimeout(step, 1000);
+            } else {
+                letterTimer = setTimeout(() => {
+                    speak(word, 0.7);
+                    // Visual feedback for completion
+                    document.getElementById("imgContainer").style.transform = "scale(1.1)";
+                    setTimeout(()=>document.getElementById("imgContainer").style.transform = "scale(1)", 300);
+                }, 800);
+            }
+        }
+        step();
+    }
+
+    function speak(text, rate) {
+        speechSynthesis.cancel();
+        let msg = new SpeechSynthesisUtterance(text);
+        msg.rate = rate;
+        msg.pitch = 1.2; // Slightly higher pitch for "friendly" voice
+        speechSynthesis.speak(msg);
+    }
+
+    function stopSpeech() {
+        clearTimeout(letterTimer);
+        speechSynthesis.cancel();
+    }
+
+    function nextWord() { index++; showWord(); }
+    function prevWord() { index--; showWord(); }
+    function repeatWord() { showWord(); }
+
+    // Keyboard Shortcuts
+    window.addEventListener('keydown', (e) => {
+        if(e.key === "ArrowRight") nextWord();
+        if(e.key === "ArrowLeft") prevWord();
+        if(e.key === " ") repeatWord();
+    });
+
+    showWord();
 </script>
-
 </body>
 </html>
