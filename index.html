@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Kids Spelling Full System</title>
+<title>Kids Spelling with Repeat</title>
 <style>
 body { font-family: Comic Sans MS, Arial; background: linear-gradient(135deg,#fbc2eb,#a6c1ee); text-align:center; }
 h1 { margin-top:20px; }
@@ -36,10 +36,12 @@ button{font-size:18px;padding:10px 20px;border-radius:15px;border:none;backgroun
 <br>
 <button onclick="prevWord()">⬅️ Back</button>
 <button onclick="nextWord()">Next ➡️</button>
+<button onclick="repeatWord()">🔁 Repeat</button>
 
 <script>
 let words = JSON.parse(localStorage.getItem("kidsWords")) || [];
 let index = 0;
+let letterTimer;
 
 // ADD single word manually
 function addWord(){
@@ -55,7 +57,7 @@ function addWord(){
         }
         reader.readAsDataURL(imgFile);
     } else {
-        words.push({word:w,img:null}); // mark as null to auto-fetch
+        words.push({word:w,img:null}); // null = auto-fetch image
         saveAndReset();
     }
 }
@@ -69,8 +71,8 @@ function uploadFile(){
         let content = e.target.result;
         let lines = content.split(/\r?\n/);
         lines.forEach(line=>{
-            let w=line.trim().toUpperCase();
-            if(w) words.push({word:w,img:null}); // null for auto image
+            let w = line.trim().toUpperCase();
+            if(w) words.push({word:w,img:null});
         });
         saveAndReset();
         alert("Words uploaded!");
@@ -80,7 +82,7 @@ function uploadFile(){
 
 // SAVE & RESET INPUTS
 function saveAndReset(){
-    localStorage.setItem("kidsWords",JSON.stringify(words));
+    localStorage.setItem("kidsWords", JSON.stringify(words));
     document.getElementById("wordInput").value="";
     document.getElementById("imgUpload").value="";
     document.getElementById("fileUpload").value="";
@@ -105,6 +107,12 @@ function loadAutoImage(word){
     img.onload = function(){ img.alt = word; }
 }
 
+// STOP CURRENT VOICE & TIMERS
+function stopSpeech(){
+    clearTimeout(letterTimer);
+    speechSynthesis.cancel();
+}
+
 // SHOW WORD + IMAGE
 function showWord(){
     if(words.length===0){
@@ -112,15 +120,15 @@ function showWord(){
         document.getElementById("img").src="";
         return;
     }
+    stopSpeech();
     if(index<0) index = words.length-1;
     if(index>=words.length) index = 0;
+
     let w = words[index];
 
-    if(w.img){ 
-        // uploaded image
+    if(w.img && w.img.startsWith("data:")){ 
         document.getElementById("img").src = w.img;
     } else {
-        // auto image from internet
         loadAutoImage(w.word);
     }
 
@@ -130,32 +138,40 @@ function showWord(){
 
 // SPEAK LETTERS + FULL WORD
 function speakLetters(word){
-    let letters = word.split(""); 
-    let i=0;
+    let letters = word.split("");
+    let i = 0;
+
     function speakNext(){
-        if(i<letters.length){
-            document.getElementById("wordBox").innerHTML+=letters[i]+" ";
-            speak(letters[i],0.6); 
+        if(i < letters.length){
+            document.getElementById("wordBox").innerHTML += letters[i]+" ";
+            speak(letters[i],0.6);
             i++;
-            setTimeout(speakNext,900);
-        } else setTimeout(()=>speak(word,0.7),800);
+            letterTimer = setTimeout(speakNext, 900);
+        } else {
+            letterTimer = setTimeout(()=>speak(word,0.7), 800);
+        }
     }
     speakNext();
 }
 
 // SPEAK FUNCTION
-function speak(text,rate){
-    let msg=new SpeechSynthesisUtterance(text);
-    msg.rate=rate; 
-    msg.pitch=1.3;
+function speak(text, rate){
+    let msg = new SpeechSynthesisUtterance(text);
+    msg.rate = rate;
+    msg.pitch = 1.3;
     speechSynthesis.speak(msg);
 }
 
 // NEXT WORD
-function nextWord(){index=(index+1)%words.length; showWord();}
+function nextWord(){ stopSpeech(); index=(index+1)%words.length; showWord(); }
 
 // PREVIOUS WORD
-function prevWord(){index=(index-1+words.length)%words.length; showWord();}
+function prevWord(){ stopSpeech(); index=(index-1+words.length)%words.length; showWord(); }
+
+// REPEAT CURRENT WORD
+function repeatWord(){ stopSpeech(); 
+    if(words.length>0) speakLetters(words[index].word); 
+}
 
 // START
 showWord();
