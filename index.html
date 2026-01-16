@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Kids Spelling Full</title>
+<title>Kids Spelling Full System</title>
 <style>
 body { font-family: Comic Sans MS, Arial; background: linear-gradient(135deg,#fbc2eb,#a6c1ee); text-align:center; }
 h1 { margin-top:20px; }
@@ -31,14 +31,15 @@ button{font-size:18px;padding:10px 20px;border-radius:15px;border:none;backgroun
 <button onclick="clearAll()">Clear All</button>
 </div>
 
-<img id="img">
+<img id="img" alt="Image will appear here">
 <div class="word" id="wordBox"></div>
 <br>
+<button onclick="prevWord()">⬅️ Back</button>
 <button onclick="nextWord()">Next ➡️</button>
 
 <script>
 let words = JSON.parse(localStorage.getItem("kidsWords")) || [];
-let index=0;
+let index = 0;
 
 // ADD single word manually
 function addWord(){
@@ -54,8 +55,7 @@ function addWord(){
         }
         reader.readAsDataURL(imgFile);
     } else {
-        let autoImg = "https://source.unsplash.com/400x400/?"+encodeURIComponent(w)+"&sig="+Date.now();
-        words.push({word:w,img:autoImg});
+        words.push({word:w,img:null}); // mark as null to auto-fetch
         saveAndReset();
     }
 }
@@ -70,7 +70,7 @@ function uploadFile(){
         let lines = content.split(/\r?\n/);
         lines.forEach(line=>{
             let w=line.trim().toUpperCase();
-            if(w) words.push({word:w,img:"https://source.unsplash.com/400x400/?"+encodeURIComponent(w)+"&sig="+Date.now()});
+            if(w) words.push({word:w,img:null}); // null for auto image
         });
         saveAndReset();
         alert("Words uploaded!");
@@ -90,41 +90,74 @@ function saveAndReset(){
 // CLEAR
 function clearAll(){
     if(confirm("Clear all words?")){
-        words=[]; localStorage.removeItem("kidsWords"); index=0; showWord();
+        words=[];
+        localStorage.removeItem("kidsWords");
+        index=0;
+        showWord();
     }
+}
+
+// LOAD AUTO IMAGE FROM INTERNET
+function loadAutoImage(word){
+    let img = document.getElementById("img");
+    img.alt = "Loading image for " + word + "...";
+    img.src = "https://source.unsplash.com/400x400/?" + encodeURIComponent(word) + "&sig=" + Date.now();
+    img.onload = function(){ img.alt = word; }
 }
 
 // SHOW WORD + IMAGE
 function showWord(){
-    if(words.length===0){document.getElementById("wordBox").innerHTML="No Words"; document.getElementById("img").src=""; return;}
+    if(words.length===0){
+        document.getElementById("wordBox").innerHTML="No Words";
+        document.getElementById("img").src="";
+        return;
+    }
+    if(index<0) index = words.length-1;
+    if(index>=words.length) index = 0;
     let w = words[index];
-    document.getElementById("img").src=w.img;
+
+    if(w.img){ 
+        // uploaded image
+        document.getElementById("img").src = w.img;
+    } else {
+        // auto image from internet
+        loadAutoImage(w.word);
+    }
+
     document.getElementById("wordBox").innerHTML="";
     speakLetters(w.word);
 }
 
 // SPEAK LETTERS + FULL WORD
 function speakLetters(word){
-    let letters = word.split(""); let i=0;
+    let letters = word.split(""); 
+    let i=0;
     function speakNext(){
         if(i<letters.length){
             document.getElementById("wordBox").innerHTML+=letters[i]+" ";
-            speak(letters[i],0.6); i++;
+            speak(letters[i],0.6); 
+            i++;
             setTimeout(speakNext,900);
         } else setTimeout(()=>speak(word,0.7),800);
     }
     speakNext();
 }
 
-// VOICE
+// SPEAK FUNCTION
 function speak(text,rate){
     let msg=new SpeechSynthesisUtterance(text);
-    msg.rate=rate; msg.pitch=1.3;
+    msg.rate=rate; 
+    msg.pitch=1.3;
     speechSynthesis.speak(msg);
 }
 
 // NEXT WORD
 function nextWord(){index=(index+1)%words.length; showWord();}
+
+// PREVIOUS WORD
+function prevWord(){index=(index-1+words.length)%words.length; showWord();}
+
+// START
 showWord();
 </script>
 
